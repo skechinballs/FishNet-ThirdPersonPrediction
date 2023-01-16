@@ -122,17 +122,24 @@ public class PredictionMotor : NetworkBehaviour
     //MoveData for client simulation
     private MoveData _clientMoveData;
 
+    // edited for fishnet 3.0.0
     //MoveData for replication
-    public struct MoveData
+    public struct MoveData : IReplicateData
     {
         public Vector2 Move;
         public bool Jump;
         public float CameraEulerY;
         public bool Sprint;
+
+        private uint _tick;
+        public void Dispose() { }
+        public uint GetTick() => _tick;
+        public void SetTick(uint value) => _tick = value;
     }
 
+    // edited for fishnet 3.0.0
     //ReconcileData for Reconciliation
-    public struct ReconcileData
+    public struct ReconcileData : IReconcileData
     {
         public Vector3 Position;
         public Quaternion Rotation;
@@ -141,7 +148,12 @@ public class PredictionMotor : NetworkBehaviour
         public float JumpTimeout;
         public bool Grounded;
 
-        public ReconcileData(Vector3 position, Quaternion rotation, float verticalVelocity, float fallTimeout, float jumpTimeout, bool grounded)
+        private uint _tick;
+        public void Dispose() { }
+        public uint GetTick() => _tick;
+        public void SetTick(uint value) => _tick = value;
+
+        /*public ReconcileData(Vector3 position, Quaternion rotation, float verticalVelocity, float fallTimeout, float jumpTimeout, bool grounded)
         {
             Position = position;
             Rotation = rotation;
@@ -149,7 +161,7 @@ public class PredictionMotor : NetworkBehaviour
             FallTimeout = fallTimeout;
             JumpTimeout = jumpTimeout;
             Grounded = grounded;
-        }
+        }*/
     }
 
     private void Awake()
@@ -217,7 +229,16 @@ public class PredictionMotor : NetworkBehaviour
         if (base.IsServer)
         {
             Move(default, true);
-            ReconcileData rd = new ReconcileData(transform.position, transform.rotation, _verticalVelocity, _fallTimeoutDelta, _jumpTimeoutDelta, Grounded);
+	    // edited for fishnet 3.0.0
+            ReconcileData rd = new ReconcileData//(transform.position, transform.rotation, _verticalVelocity, _fallTimeoutDelta, _jumpTimeoutDelta, Grounded);
+            {
+                Position = transform.position,
+                Rotation = transform.rotation,
+                VerticalVelocity = _verticalVelocity,
+                FallTimeout = _fallTimeoutDelta,
+                JumpTimeout = _jumpTimeoutDelta,
+                Grounded = Grounded,
+            };
             Reconciliation(rd, true);
         }
     }
